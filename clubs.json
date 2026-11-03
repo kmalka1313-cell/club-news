@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Los Angeles Lakers",
+    "sport": "Basketball",
+    "query": "Los Angeles Lakers"
+  },
+  {
+    "name": "New York Yankees",
+    "sport": "Baseball",
+    "query": "New York Yankees"
+  },
+  {
+    "name": "barcelona",
+    "sport": "football",
+    "query": "barcelona"
+  }
+]

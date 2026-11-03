@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Club News</title>
+<style>
+  :root {
+    color-scheme: dark;
+    /* the four colours users can change (see Theme dialog); everything else derives from them */
+    --bg: #05070d; --card: #0b1020; --text: #e6edf9; --accent: #2f7bff;
+    --accent-text: #fff; --danger: #ff5c6c;
+    --raised: color-mix(in srgb, var(--card), var(--accent) 10%);
+    --border: color-mix(in srgb, var(--card), var(--accent) 22%);
+    --muted: color-mix(in srgb, var(--text) 55%, var(--card));
+    --accent-hi: color-mix(in srgb, var(--accent), white 25%);
+    --glow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent), 0 6px 24px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: radial-gradient(1200px 500px at 50% -150px, color-mix(in srgb, var(--bg), var(--accent) 22%) 0%, var(--bg) 70%) fixed; color: var(--text); font: 15px/1.5 system-ui, sans-serif; min-height: 100vh; }
+  header { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--accent); box-shadow: 0 1px 18px color-mix(in srgb, var(--accent) 25%, transparent); padding: 12px 16px; }
+  .bar { max-width: 1100px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  h1 { font-size: 20px; margin: 0 auto 0 0; letter-spacing: .5px; }
+  h1::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  select, input, button { font: inherit; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--raised); color: var(--text); transition: border-color .15s, box-shadow .15s, background .15s; }
+  input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: linear-gradient(180deg, var(--accent-hi), var(--accent)); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+  button.primary:hover { box-shadow: var(--glow); }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .tab { border-radius: 999px; padding: 4px 12px; font-size: 14px; }
+  .tab.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .card { background: linear-gradient(180deg, var(--raised), var(--card) 60%); border: 1px solid var(--border); border-top: 2px solid var(--accent); border-radius: 12px; padding: 14px 16px; transition: box-shadow .2s, transform .2s; }
+  .card:hover { box-shadow: var(--glow); transform: translateY(-2px); }
+  .card h2 { font-size: 16px; margin: 0 0 2px; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .sport { display: inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent-hi); background: color-mix(in srgb, var(--accent) 12%, transparent); border-radius: 999px; padding: 1px 9px; margin-bottom: 8px; }
+  .rm { border: none; background: none; color: var(--muted); padding: 0 4px; font-size: 18px; line-height: 1; }
+  .rm:hover { color: var(--danger); }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { padding: 8px 0; border-top: 1px solid var(--border); }
+  li a { color: var(--text); text-decoration: none; }
+  li a:hover { color: var(--accent); }
+  .meta { font-size: 12px; color: var(--muted); }
+  .empty, .err { color: var(--muted); font-size: 14px; }
+  .err { color: var(--danger); }
+  #status { text-align: center; color: var(--muted); padding: 40px 0; }
+  #preview { position: fixed; right: 0; top: 0; bottom: 0; width: min(380px, 100%); background: var(--card); border-left: 1px solid var(--border); padding: 20px; transform: translateX(100%); transition: transform .2s; z-index: 10; display: flex; flex-direction: column; gap: 10px; box-shadow: -4px 0 16px rgba(0,0,0,.15); }
+  #preview.open { transform: none; }
+  #preview h3 { margin: 0; font-size: 18px; line-height: 1.3; }
+  #preview .actions { display: flex; gap: 8px; margin-top: auto; }
+  #preview .actions a { flex: 1; text-align: center; text-decoration: none; padding: 8px 10px; border-radius: 8px; background: var(--accent); color: var(--accent-text); }
+  #pclose { align-self: flex-end; border: none; background: none; font-size: 22px; line-height: 1; }
+  li.sel { background: color-mix(in srgb, var(--accent) 16%, transparent); box-shadow: inset 3px 0 0 var(--accent); padding-left: 8px; }
+  ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+  [dir=rtl] #preview { right: auto; left: 0; border-left: none; border-right: 1px solid var(--border); transform: translateX(-100%); box-shadow: 4px 0 16px rgba(0,0,0,.15); }
+  [dir=rtl] #preview.open { transform: none; }
+  [dir=rtl] li.sel { box-shadow: inset -3px 0 0 var(--accent); padding-left: 0; padding-right: 8px; }
+  [dir=rtl] h1 { margin: 0 0 0 auto; }
+  [dir=rtl] h1::before { margin: 0 0 0 8px; }
+  ::backdrop { background: rgba(0,0,0,.7); }
+  #auth { position: fixed; inset: 0; z-index: 20; background: var(--bg); display: none; align-items: center; justify-content: center; padding: 16px; }
+  #auth form { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 10px; width: min(340px, 100%); }
+  #auth h2 { margin: 0; font-size: 18px; }
+  #autherr, #usererr { color: var(--danger); font-size: 13px; min-height: 18px; }
+  #who { font-size: 13px; color: var(--muted); }
+  .badge { font-size: 11px; background: var(--accent); color: var(--accent-text); border-radius: 999px; padding: 0 7px; margin-left: 6px; }
+  .admin-only { display: none; }
+  body.is-admin .admin-only { display: inline-block; }
+  #chat { display: flex; flex-direction: column; gap: 8px; min-height: 0; flex: 1; border-top: 1px solid var(--border); padding-top: 10px; }
+  #msgs { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  .msg { background: var(--raised); border: 1px solid var(--border); border-radius: 10px; padding: 6px 10px; font-size: 14px; word-break: break-word; }
+  .msg.mine { background: color-mix(in srgb, var(--accent) 20%, transparent); border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
+  #themeform { display: flex; flex-direction: column; gap: 10px; min-width: 280px; }
+  .crow { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .crow input[type=color] { width: 48px; height: 30px; padding: 2px; cursor: pointer; }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .presets button { font-size: 13px; padding: 3px 10px; }
+  .msg .meta { display: flex; justify-content: space-between; }
+  .msg .del { border: none; background: none; padding: 0; color: var(--muted); font-size: 12px; }
+  #chatform { display: flex; gap: 6px; }
+  #chatform input { flex: 1; min-width: 0; }
+  #userlist { list-style: none; margin: 0 0 10px; padding: 0; }
+  #userlist li { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+  dialog { border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--text); }
+  dialog form { display: flex; flex-direction: column; gap: 10px; min-width: 260px; }
+  dialog menu { display: flex; justify-content: flex-end; gap: 8px; margin: 0; padding: 0; }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1>Club News</h1>
+    <label><span data-i18n="last">Last</span> <select id="days"><option value="1"></option><option value="2" selected></option><option value="7"></option><option value="30"></option></select></label>
+    <select id="lang" class="langsel" title="Language / Idioma / Langue / Sprache / भाषा"></select>
+    <button id="refresh" data-i18n="refresh">Refresh</button>
+    <button id="add" class="primary admin-only" data-i18n="addClub">+ Add club</button>
+    <button id="usersbtn" class="admin-only" data-i18n="users">Users</button>
+    <button id="themebtn" data-i18n="theme" data-i18n-title="themeTitle">🎨 Theme</button>
+    <span id="who"></span>
+    <button id="logout" data-i18n="logout">Log out</button>
+  </div>
+</header>
+<main>
+  <div class="tabs" id="tabs"></div>
+  <div id="status" data-i18n="loading">Loading…</div>
+  <div class="grid" id="grid"></div>
+</main>
+<aside id="preview" aria-live="polite">
+  <button id="pclose" data-i18n-title="close" title="Close">×</button>
+  <div class="meta" id="pclub"></div>
+  <h3 id="ptitle"></h3>
+  <div class="meta" id="pmeta"></div>
+  <div class="actions"><a id="popen" target="_blank" rel="noopener" data-i18n="openArticle">Open article ↗</a><button id="pcopy" data-i18n="copyLink">Copy link</button></div>
+  <div id="chat">
+    <strong data-i18n="chat">Chat</strong>
+    <div id="msgs"></div>
+    <form id="chatform"><input id="chatinput" data-i18n-ph="writeMsg" maxlength="1000" autocomplete="off"><button class="primary" data-i18n="send">Send</button></form>
+  </div>
+</aside>
+<div id="auth">
+  <form id="authform">
+    <h2 id="authtitle">Log in</h2>
+    <div class="meta" id="authhint"></div>
+    <input id="authuser" data-i18n-ph="username" autocomplete="username" required>
+    <input id="authpass" type="password" data-i18n-ph="password" autocomplete="current-password" required>
+    <div id="autherr"></div>
+    <button class="primary" id="authbtn">Log in</button>
+    <select id="lang2" class="langsel"></select>
+  </form>
+</div>
+<dialog id="themedlg">
+  <form method="dialog" id="themeform">
+    <strong data-i18n="themeColors">Theme colors</strong>
+    <div class="presets" id="presets"></div>
+    <label class="crow"><span data-i18n="cAccent">Accent</span> <input type="color" id="c-accent"></label>
+    <label class="crow"><span data-i18n="cBg">Background</span> <input type="color" id="c-bg"></label>
+    <label class="crow"><span data-i18n="cCard">Cards</span> <input type="color" id="c-card"></label>
+    <label class="crow"><span data-i18n="cText">Text</span> <input type="color" id="c-text"></label>
+    <menu><button type="button" id="themereset" data-i18n="reset">Reset</button><button class="primary" value="close" data-i18n="done">Done</button></menu>
+  </form>
+</dialog>
+<dialog id="usersdlg">
+  <form method="dialog" id="userform">
+    <strong data-i18n="users">Users</strong>
+    <ul id="userlist"></ul>
+    <input name="username" data-i18n-ph="newUsername" autocomplete="off">
+    <input name="password" type="password" data-i18n-ph="pwMin" autocomplete="new-password">
+    <label><input type="checkbox" name="admin"> <span data-i18n="admin">Admin</span></label>
+    <div id="usererr"></div>
+    <menu><button value="close" formnovalidate data-i18n="close">Close</button><button class="primary" value="add" data-i18n="addUser">Add user</button></menu>
+  </form>
+</dialog>
+<dialog id="dlg">
+  <form method="dialog" id="form">
+    <strong data-i18n="addAClub">Add a club</strong>
+    <input name="name" data-i18n-ph="clubName" required autofocus>
+    <input name="sport" data-i18n-ph="sportPh">
+    <menu><button value="cancel" formnovalidate data-i18n="cancel">Cancel</button><button class="primary" value="ok" data-i18n="add">Add</button></menu>
+  </form>
+</dialog>
+<script>
+const $ = (id) => document.getElementById(id);
+let data = [], sport = "All";
+
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// ---- language (UI text + Google News edition; saved in localStorage) ----
+const LANGS = { en: "English", es: "Español", fr: "Français", de: "Deutsch", hi: "हिन्दी", he: "עברית" };
+const DICT = {
+  en: { last: "Last", refresh: "Refresh", addClub: "+ Add club", users: "Users", theme: "🎨 Theme", themeTitle: "Customize colors",
+    logout: "Log out", loading: "Loading…", close: "Close", openArticle: "Open article ↗", copyLink: "Copy link", copied: "Copied", chat: "Chat", send: "Send",
+    writeMsg: "Write a message…", username: "Username", password: "Password", login: "Log in", setupTitle: "Create admin account",
+    setupHint: "First run: this account will be the admin.", createAccount: "Create account", themeColors: "Theme colors", cAccent: "Accent",
+    cBg: "Background", cCard: "Cards", cText: "Text", reset: "Reset", done: "Done", newUsername: "New username", pwMin: "Password (min 6)",
+    admin: "Admin", addUser: "Add user", addAClub: "Add a club", clubName: "Club name", sportPh: "Sport (e.g. Football)", cancel: "Cancel", add: "Add",
+    all: "All", noClubs: "No clubs yet. Add one!", failedLoad: "Failed to load", fetchFailed: "Fetch failed", nothing: "Nothing in this period.",
+    noMsgs: "No messages yet. Start the conversation.", delete: "delete", removeClub: "Remove club", removeClubQ: "Remove {x}?", removeUser: "Remove user",
+    removeUserQ: "Remove user {x}?" },
+  es: { last: "Últimos", refresh: "Actualizar", addClub: "+ Añadir club", users: "Usuarios", theme: "🎨 Tema", themeTitle: "Personalizar colores",
+    logout: "Cerrar sesión", loading: "Cargando…", close: "Cerrar", openArticle: "Abrir artículo ↗", copyLink: "Copiar enlace", copied: "Copiado", chat: "Chat", send: "Enviar",
+    writeMsg: "Escribe un mensaje…", username: "Usuario", password: "Contraseña", login: "Iniciar sesión", setupTitle: "Crear cuenta de administrador",
+    setupHint: "Primer uso: esta cuenta será la de administrador.", createAccount: "Crear cuenta", themeColors: "Colores del tema", cAccent: "Acento",
+    cBg: "Fondo", cCard: "Tarjetas", cText: "Texto", reset: "Restablecer", done: "Listo", newUsername: "Nuevo usuario", pwMin: "Contraseña (mín. 6)",
+    admin: "Administrador", addUser: "Añadir usuario", addAClub: "Añadir un club", clubName: "Nombre del club", sportPh: "Deporte (p. ej. Fútbol)", cancel: "Cancelar", add: "Añadir",
+    all: "Todos", noClubs: "Aún no hay clubes. ¡Añade uno!", failedLoad: "Error al cargar", fetchFailed: "Error de descarga", nothing: "Nada en este periodo.",
+    noMsgs: "Aún no hay mensajes. Inicia la conversación.", delete: "eliminar", removeClub: "Quitar club", removeClubQ: "¿Quitar {x}?", removeUser: "Quitar usuario",
+    removeUserQ: "¿Quitar al usuario {x}?" },
+  fr: { last: "Derniers", refresh: "Actualiser", addClub: "+ Ajouter un club", users: "Utilisateurs", theme: "🎨 Thème", themeTitle: "Personnaliser les couleurs",
+    logout: "Se déconnecter", loading: "Chargement…", close: "Fermer", openArticle: "Ouvrir l'article ↗", copyLink: "Copier le lien", copied: "Copié", chat: "Discussion", send: "Envoyer",
+    writeMsg: "Écrire un message…", username: "Nom d'utilisateur", password: "Mot de passe", login: "Se connecter", setupTitle: "Créer le compte administrateur",
+    setupHint: "Premier lancement : ce compte sera l'administrateur.", createAccount: "Créer le compte", themeColors: "Couleurs du thème", cAccent: "Accent",
+    cBg: "Arrière-plan", cCard: "Cartes", cText: "Texte", reset: "Réinitialiser", done: "Terminé", newUsername: "Nouvel utilisateur", pwMin: "Mot de passe (min. 6)",
+    admin: "Administrateur", addUser: "Ajouter", addAClub: "Ajouter un club", clubName: "Nom du club", sportPh: "Sport (ex. Football)", cancel: "Annuler", add: "Ajouter",
+    all: "Tous", noClubs: "Aucun club pour l'instant. Ajoutez-en un !", failedLoad: "Échec du chargement", fetchFailed: "Échec de la récupération", nothing: "Rien sur cette période.",
+    noMsgs: "Aucun message. Lancez la conversation.", delete: "supprimer", removeClub: "Retirer le club", removeClubQ: "Retirer {x} ?", removeUser: "Retirer l'utilisateur",
+    removeUserQ: "Retirer l'utilisateur {x} ?" },
+  de: { last: "Letzte", refresh: "Aktualisieren", addClub: "+ Verein hinzufügen", users: "Benutzer", theme: "🎨 Design", themeTitle: "Farben anpassen",
+    logout: "Abmelden", loading: "Lädt…", close: "Schließen", openArticle: "Artikel öffnen ↗", copyLink: "Link kopieren", copied: "Kopiert", chat: "Chat", send: "Senden",
+    writeMsg: "Nachricht schreiben…", username: "Benutzername", password: "Passwort", login: "Anmelden", setupTitle: "Admin-Konto erstellen",
+    setupHint: "Erster Start: Dieses Konto wird der Administrator.", createAccount: "Konto erstellen", themeColors: "Designfarben", cAccent: "Akzent",
+    cBg: "Hintergrund", cCard: "Karten", cText: "Text", reset: "Zurücksetzen", done: "Fertig", newUsername: "Neuer Benutzername", pwMin: "Passwort (mind. 6)",
+    admin: "Admin", addUser: "Benutzer hinzufügen", addAClub: "Verein hinzufügen", clubName: "Vereinsname", sportPh: "Sportart (z. B. Fußball)", cancel: "Abbrechen", add: "Hinzufügen",
+    all: "Alle", noClubs: "Noch keine Vereine. Füge einen hinzu!", failedLoad: "Laden fehlgeschlagen", fetchFailed: "Abruf fehlgeschlagen", nothing: "Nichts in diesem Zeitraum.",
+    noMsgs: "Noch keine Nachrichten. Starte die Unterhaltung.", delete: "löschen", removeClub: "Verein entfernen", removeClubQ: "{x} entfernen?", removeUser: "Benutzer entfernen",
+    removeUserQ: "Benutzer {x} entfernen?" },
+  hi: { last: "पिछले", refresh: "रीफ़्रेश", addClub: "+ क्लब जोड़ें", users: "उपयोगकर्ता", theme: "🎨 थीम", themeTitle: "रंग बदलें",
+    logout: "लॉग आउट", loading: "लोड हो रहा है…", close: "बंद करें", openArticle: "लेख खोलें ↗", copyLink: "लिंक कॉपी करें", copied: "कॉपी हो गया", chat: "चैट", send: "भेजें",
+    writeMsg: "संदेश लिखें…", username: "उपयोगकर्ता नाम", password: "पासवर्ड", login: "लॉग इन", setupTitle: "एडमिन खाता बनाएँ",
+    setupHint: "पहली बार: यह खाता एडमिन होगा।", createAccount: "खाता बनाएँ", themeColors: "थीम के रंग", cAccent: "एक्सेंट",
+    cBg: "पृष्ठभूमि", cCard: "कार्ड", cText: "टेक्स्ट", reset: "रीसेट", done: "हो गया", newUsername: "नया उपयोगकर्ता नाम", pwMin: "पासवर्ड (कम से कम 6)",
+    admin: "एडमिन", addUser: "उपयोगकर्ता जोड़ें", addAClub: "क्लब जोड़ें", clubName: "क्लब का नाम", sportPh: "खेल (जैसे फुटबॉल)", cancel: "रद्द करें", add: "जोड़ें",
+    all: "सभी", noClubs: "अभी कोई क्लब नहीं। एक जोड़ें!", failedLoad: "लोड नहीं हो सका", fetchFailed: "प्राप्त नहीं हो सका", nothing: "इस अवधि में कुछ नहीं।",
+    noMsgs: "अभी कोई संदेश नहीं। बातचीत शुरू करें।", delete: "हटाएँ", removeClub: "क्लब हटाएँ", removeClubQ: "{x} हटाएँ?", removeUser: "उपयोगकर्ता हटाएँ",
+    removeUserQ: "उपयोगकर्ता {x} को हटाएँ?" },
+  he: { last: "אחרונים", refresh: "רענון", addClub: "+ הוספת מועדון", users: "משתמשים", theme: "🎨 ערכת נושא", themeTitle: "התאמת צבעים",
+    logout: "התנתקות", loading: "טוען…", close: "סגירה", openArticle: "פתיחת הכתבה ↗", copyLink: "העתקת קישור", copied: "הועתק", chat: "צ'אט", send: "שליחה",
+    writeMsg: "כתבו הודעה…", username: "שם משתמש", password: "סיסמה", login: "התחברות", setupTitle: "יצירת חשבון מנהל",
+    setupHint: "הפעלה ראשונה: החשבון הזה יהיה המנהל.", createAccount: "יצירת חשבון", themeColors: "צבעי ערכת הנושא", cAccent: "צבע הדגשה",
+    cBg: "רקע", cCard: "כרטיסים", cText: "טקסט", reset: "איפוס", done: "סיום", newUsername: "שם משתמש חדש", pwMin: "סיסמה (לפחות 6)",
+    admin: "מנהל", addUser: "הוספת משתמש", addAClub: "הוספת מועדון", clubName: "שם המועדון", sportPh: "ענף ספורט (למשל כדורגל)", cancel: "ביטול", add: "הוספה",
+    all: "הכול", noClubs: "אין מועדונים עדיין. הוסיפו אחד!", failedLoad: "הטעינה נכשלה", fetchFailed: "השליפה נכשלה", nothing: "אין חדשות בתקופה זו.",
+    noMsgs: "אין הודעות עדיין. התחילו את השיחה.", delete: "מחיקה", removeClub: "הסרת מועדון", removeClubQ: "להסיר את {x}?", removeUser: "הסרת משתמש",
+    removeUserQ: "להסיר את המשתמש {x}?" },
+};
+let lang = "en";
+try { const s = localStorage.getItem("lang"); if (LANGS[s]) lang = s; else if (LANGS[navigator.language.slice(0, 2)]) lang = navigator.language.slice(0, 2); } catch {}
+const t = (k, x) => (DICT[lang][k] ?? DICT.en[k] ?? k).replace("{x}", x ?? "").replace("{n}", x ?? "");
+const ago = (d) => {
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: "auto", style: "short" });
+  const m = Math.round((Date.now() - new Date(d)) / 60000);
+  if (m < 60) return rtf.format(-Math.max(m, 1), "minute");
+  if (m < 1440) return rtf.format(-Math.round(m / 60), "hour");
+  return rtf.format(-Math.round(m / 1440), "day");
+};
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === "he" ? "rtl" : "ltr";
+  document.querySelectorAll("[data-i18n]").forEach((el) => (el.textContent = t(el.dataset.i18n)));
+  document.querySelectorAll("[data-i18n-ph]").forEach((el) => (el.placeholder = t(el.dataset.i18nPh)));
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => (el.title = t(el.dataset.i18nTitle)));
+  [...$("days").options].forEach((o) => (o.textContent = new Intl.NumberFormat(lang, { style: "unit", unit: "day", unitDisplay: "long" }).format(o.value)));
+  document.querySelectorAll(".langsel").forEach((s) => (s.value = lang));
+  if (!me) { if ($("auth").style.display === "flex") showAuth(authMode === "setup"); }
+  else { $("who").innerHTML = whoHtml(me); render(); if (chatId) loadChat(); }
+}
+document.querySelectorAll(".langsel").forEach((s) => {
+  s.innerHTML = Object.entries(LANGS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
+  s.onchange = () => {
+    lang = s.value;
+    try { localStorage.setItem("lang", lang); } catch {}
+    applyLang();
+    if (me) load(); // news edition follows the language
+  };
+});
+
+let me = null, authMode = "login", chatId = null, chatTimer = null;
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, { ...opts, body: opts.body && JSON.stringify(opts.body) });
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 401 && !path.startsWith("/api/login") && !path.startsWith("/api/setup")) { showAuth(body.setup); throw new Error("login required"); }
+  if (!res.ok) throw new Error(body.error || "HTTP " + res.status);
+  return body;
+}
+
+function showAuth(setup) {
+  me = null; closePreview();
+  authMode = setup ? "setup" : "login";
+  $("authtitle").textContent = setup ? t("setupTitle") : t("login");
+  $("authhint").textContent = setup ? t("setupHint") : "";
+  $("authbtn").textContent = setup ? t("createAccount") : t("login");
+  $("authpass").autocomplete = setup ? "new-password" : "current-password";
+  $("autherr").textContent = "";
+  $("auth").style.display = "flex";
+}
+
+const whoHtml = (u) => `${esc(u.username)}${u.role === "admin" ? `<span class="badge">${t("admin")}</span>` : ""}`;
+function enter(user) {
+  me = user;
+  $("auth").style.display = "none";
+  $("authform").reset();
+  document.body.classList.toggle("is-admin", user.role === "admin");
+  $("who").innerHTML = whoHtml(user);
+  load();
+}
+
+$("authform").onsubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const r = await api(authMode === "setup" ? "/api/setup" : "/api/login", { method: "POST", body: { username: $("authuser").value, password: $("authpass").value } });
+    enter(r.user);
+  } catch (err) { $("autherr").textContent = err.message; }
+};
+$("logout").onclick = async () => { await fetch("/api/logout", { method: "POST" }); data = []; render(); showAuth(false); };
+
+async function init() {
+  const res = await fetch("/api/me");
+  const body = await res.json();
+  if (res.ok) enter(body.user); else showAuth(body.setup);
+}
+
+async function load() {
+  $("status").style.display = "block"; $("status").textContent = t("loading"); $("grid").innerHTML = "";
+  try { data = await api("/api/news?days=" + $("days").value + "&lang=" + lang); }
+  catch (e) { $("status").textContent = t("failedLoad") + ": " + e.message; return; }
+  render();
+}
+
+function render() {
+  const sports = ["All", ...new Set(data.map((c) => c.sport))];
+  if (!sports.includes(sport)) sport = "All";
+  $("tabs").innerHTML = sports.map((s) => `<button class="tab ${s === sport ? "active" : ""}" data-s="${esc(s)}">${s === "All" ? t("all") : esc(s)}</button>`).join("");
+  const shown = data.filter((c) => sport === "All" || c.sport === sport);
+  $("status").style.display = shown.length ? "none" : "block";
+  $("status").textContent = t("noClubs");
+  $("grid").innerHTML = shown.map((c) => `
+    <section class="card">
+      <h2>${esc(c.name)}<button class="rm admin-only" data-name="${esc(c.name)}" title="${t("removeClub")}">×</button></h2>
+      <div class="sport">${esc(c.sport)}</div>
+      ${c.error ? `<div class="err">${t("fetchFailed")}: ${esc(c.error)}</div>` :
+        c.items.length ? `<ul>${c.items.map((i) => `
+          <li data-id="${i.id}"><a href="${esc(i.link)}" target="_blank" rel="noopener">${esc(i.title)}</a>
+          <div class="meta">${esc(i.source || "")} · ${ago(i.published)}${i.chats ? ` · 💬 <span class="cc">${i.chats}</span>` : ""}</div></li>`).join("")}</ul>`
+        : `<div class="empty">${t("nothing")}</div>`}
+    </section>`).join("");
+}
+
+$("tabs").onclick = (e) => { if (e.target.dataset.s) { sport = e.target.dataset.s; render(); } };
+function showPreview(a) {
+  document.querySelectorAll("li.sel").forEach((l) => l.classList.remove("sel"));
+  const li = a.closest("li");
+  li.classList.add("sel");
+  $("pclub").textContent = a.closest(".card").querySelector("h2").firstChild.textContent;
+  $("ptitle").textContent = a.textContent;
+  $("pmeta").textContent = li.querySelector(".meta").textContent;
+  $("popen").href = a.href;
+  $("preview").classList.add("open");
+  chatId = li.dataset.id;
+  $("msgs").innerHTML = "";
+  loadChat();
+  clearInterval(chatTimer);
+  chatTimer = setInterval(loadChat, 5000);
+}
+function closePreview() {
+  $("preview").classList.remove("open");
+  document.querySelectorAll("li.sel").forEach((l) => l.classList.remove("sel"));
+  clearInterval(chatTimer); chatId = null;
+}
+$("pclose").onclick = closePreview;
+
+function renderChat(list) {
+  const box = $("msgs");
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+  box.innerHTML = list.length ? list.map((m) => `
+    <div class="msg ${m.user === me.username ? "mine" : ""}">
+      <div class="meta"><span>${esc(m.user)} · ${ago(m.at)}</span>
+      ${m.user === me.username || me.role === "admin" ? `<button class="del" data-mid="${m.id}" title="${t("delete")}">${t("delete")}</button>` : ""}</div>
+      ${esc(m.text)}</div>`).join("") : `<div class="empty">${t("noMsgs")}</div>`;
+  if (atBottom) box.scrollTop = box.scrollHeight;
+  const li = document.querySelector(`li[data-id="${chatId}"] .meta`);
+  if (li) {
+    li.querySelector(".cc")?.parentNode && (li.innerHTML = li.innerHTML.replace(/ · 💬 <span class="cc">\d+<\/span>/, ""));
+    if (list.length) li.insertAdjacentHTML("beforeend", ` · 💬 <span class="cc">${list.length}</span>`);
+  }
+}
+async function loadChat() {
+  const id = chatId;
+  if (!id) return;
+  try { const list = await api("/api/chat?id=" + id); if (id === chatId) renderChat(list); } catch {}
+}
+$("chatform").onsubmit = async (e) => {
+  e.preventDefault();
+  const text = $("chatinput").value.trim();
+  if (!text || !chatId) return;
+  try {
+    const list = await api("/api/chat?id=" + chatId, { method: "POST", body: { text } });
+    $("chatinput").value = ""; renderChat(list); $("msgs").scrollTop = $("msgs").scrollHeight;
+  } catch (err) { alert(err.message); }
+};
+$("msgs").onclick = async (e) => {
+  const mid = e.target.dataset.mid;
+  if (!mid) return;
+  try { renderChat(await api(`/api/chat?id=${chatId}&mid=${mid}`, { method: "DELETE" })); } catch (err) { alert(err.message); }
+};
+$("pcopy").onclick = () => navigator.clipboard.writeText($("popen").href).then(() => { $("pcopy").textContent = t("copied"); setTimeout(() => ($("pcopy").textContent = t("copyLink")), 1200); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("pclose").click(); });
+$("grid").onclick = async (e) => {
+  const a = e.target.closest("li a");
+  if (a) { e.preventDefault(); return showPreview(a); }
+  const name = e.target.dataset.name;
+  if (!name || !confirm(t("removeClubQ", name))) return;
+  try { await api("/api/clubs?name=" + encodeURIComponent(name), { method: "DELETE" }); }
+  catch (err) { return alert(err.message); }
+  data = data.filter((c) => c.name !== name); render();
+};
+$("days").onchange = $("refresh").onclick = load;
+$("add").onclick = () => { $("form").reset(); $("dlg").showModal(); };
+$("form").onsubmit = async (e) => {
+  if (e.submitter.value !== "ok") return;
+  const f = new FormData($("form"));
+  try { await api("/api/clubs", { method: "POST", body: { name: f.get("name"), sport: f.get("sport") } }); load(); }
+  catch (err) { alert(err.message); }
+};
+
+// ---- theme (per browser, saved in localStorage) ----
+const PRESETS = {
+  "Blue & Black": { accent: "#2f7bff", bg: "#05070d", card: "#0b1020", text: "#e6edf9" },
+  "Emerald": { accent: "#10b981", bg: "#050a08", card: "#0a1411", text: "#e5f5ee" },
+  "Crimson": { accent: "#ef4444", bg: "#0a0606", card: "#160c0c", text: "#f7e8e8" },
+  "Violet": { accent: "#8b5cf6", bg: "#07050d", card: "#100b1f", text: "#ece8f9" },
+  "Light": { accent: "#2563eb", bg: "#f1f4fa", card: "#ffffff", text: "#141a2a" },
+};
+const KEYS = ["accent", "bg", "card", "text"];
+let theme = { ...PRESETS["Blue & Black"] };
+try { theme = { ...theme, ...JSON.parse(localStorage.getItem("theme") || "{}") }; } catch {}
+
+function applyTheme() {
+  const r = document.documentElement;
+  KEYS.forEach((k) => { r.style.setProperty("--" + k, theme[k]); $("c-" + k).value = theme[k]; });
+  const [R, G, B] = [1, 3, 5].map((i) => parseInt(theme.accent.slice(i, i + 2), 16));
+  r.style.setProperty("--accent-text", (R * 299 + G * 587 + B * 114) / 1000 > 150 ? "#000" : "#fff");
+  const light = [1, 3, 5].reduce((s, i) => s + parseInt(theme.bg.slice(i, i + 2), 16), 0) / 3 > 128;
+  r.style.colorScheme = light ? "light" : "dark";
+  try { localStorage.setItem("theme", JSON.stringify(theme)); } catch {}
+}
+$("presets").innerHTML = Object.keys(PRESETS).map((n) => `<button type="button" data-p="${n}">${n}</button>`).join("");
+$("presets").onclick = (e) => { if (e.target.dataset.p) { theme = { ...PRESETS[e.target.dataset.p] }; applyTheme(); } };
+KEYS.forEach((k) => ($("c-" + k).oninput = (e) => { theme[k] = e.target.value; applyTheme(); }));
+$("themereset").onclick = () => { theme = { ...PRESETS["Blue & Black"] }; applyTheme(); };
+$("themebtn").onclick = () => $("themedlg").showModal();
+applyTheme();
+
+// ---- user management (admin) ----
+function renderUsers(list) {
+  $("userlist").innerHTML = list.map((u) => `<li><span>${esc(u.username)}${u.role === "admin" ? '<span class="badge">admin</span>' : ""}</span>
+    ${u.username === me.username ? "" : `<button type="button" class="rm" data-u="${esc(u.username)}" title="${t("removeUser")}">×</button>`}</li>`).join("");
+}
+$("usersbtn").onclick = async () => {
+  $("usererr").textContent = ""; $("userform").reset();
+  try { renderUsers(await api("/api/users")); $("usersdlg").showModal(); } catch (err) { alert(err.message); }
+};
+$("userlist").onclick = async (e) => {
+  const u = e.target.dataset.u;
+  if (!u || !confirm(t("removeUserQ", u))) return;
+  try { renderUsers(await api("/api/users?username=" + encodeURIComponent(u), { method: "DELETE" })); }
+  catch (err) { $("usererr").textContent = err.message; }
+};
+$("userform").onsubmit = async (e) => {
+  if (e.submitter.value !== "add") return;
+  e.preventDefault();
+  const f = new FormData($("userform"));
+  try {
+    renderUsers(await api("/api/users", { method: "POST", body: { username: f.get("username"), password: f.get("password"), role: f.get("admin") ? "admin" : "member" } }));
+    $("userform").reset(); $("usererr").textContent = "";
+  } catch (err) { $("usererr").textContent = err.message; }
+};
+
+applyLang();
+init();
+</script>
+</body>
+</html>
